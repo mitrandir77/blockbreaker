@@ -1,21 +1,33 @@
 import Keyboard
+import Window
 
-player = { angle=0, score=0, x=300, y=0, balls=[{x=0, y=0, vx=1, vy=0}, {x=3, y=3, vx=0, vy=1}] }
+tupleMin (w,h) = min w h
+
+context = {
+    size=0,
+    w=0,
+    h=0,
+    angle=0,
+    score=0,
+    x=300,
+    y=0,
+    balls=[{x=0, y=0, vx=1, vy=0},
+           {x=3, y=3, vx=0, vy=1}] }
 
 clearGrey = rgb 100 100 200
 playerColor  = rgb 100 200 100
 
-playerPos angle  = (300 * cos angle, 300 * sin angle)
+playerPos angle = (cos angle, sin angle)
 
 movePlayer {x} p =
     let newAngle = p.angle + x/20
         (newX, newY) = playerPos newAngle
-    in { p | angle <- newAngle, x <- newX, y<-newY }
+    in { p | angle <- newAngle, x <- newX * p.radius, y <- newY * p.radius }
 
 near k c n = n >= k-c && n <= k+c
 
-within ball player = (ball.x |> near player.x 8)
-                  && (ball.y |> near player.y 20)
+within ball context = (ball.x |> near context.x 8)
+                  && (ball.y |> near context.y 20)
 
 detectCollision p ball =
     let revertedBall b = {b | vx <- 0-b.vx, vy<-0-b.vy }
@@ -31,18 +43,24 @@ moveBalls t p =
     let m b = moveBall b t
     in {p | balls <- map m p.balls }
 
-step (t, dir) = movePlayer dir . moveBalls t . detectCollisions
+updateDimensions (w, h) p =
+    { p | radius <- ((min w h) - 40) / 2,
+          size <- (min w h) - 40,
+          w <- w,
+          h <- h }
+
+step (t, dir, dimensions) = updateDimensions dimensions . movePlayer dir . moveBalls t . detectCollisions
 
 render p =
     let drawBall ball = (circle 10 |> filled white |> move (ball.x, ball.y))
         balls = map drawBall p.balls
-        board = [filled clearGrey (circle 300)]
+        board = [filled clearGrey (circle p.radius)]
         pad = [rect 14 45 |> filled playerColor |> move (p.x, p.y) |> rotate p.angle]
-    in collage 700 700 (board ++ pad ++ balls)
+    in collage (p.size + 20) (p.size + 20) (board ++ pad ++ balls)
 
 
 input = let delta = lift (\t -> t/20) (fps 50)
-        in sampleOn delta (lift2 (,) delta Keyboard.arrows)
+            toSignal d a wh = (d, a, wh)
+        in sampleOn delta (lift3 toSignal delta Keyboard.arrows Window.dimensions)
 
-main  = lift render (foldp step player input)
-
+main  = lift render (foldp step context input)
