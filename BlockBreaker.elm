@@ -1,8 +1,16 @@
 import Keyboard
 import Window
 
+settings = {
+    margin=20,
+    ball_size=10,
+    pad_width=14,
+    pad_height=85,
+    fps=50
+    }
+
 context = {
-    size=0,
+    diameter=0,
     w=0,
     h=0,
     players=[{color=(rgb 200 0 0), angle=0, score=0, x=300, y=0},
@@ -53,8 +61,8 @@ moveBalls time context =
     in {context | balls <- map mover context.balls }
 
 updateDimensions (width, height) context =
-    { context | radius <- ((min width height) - 40) / 2,
-                size <- (min width height) - 40,
+    { context | radius <- ((min width height) - 2 * settings.margin) / 2,
+                diameter <- (min width height) - 2 * settings.margin,
                 w <- width,
                 h <- height }
 
@@ -65,15 +73,15 @@ step (delta, directions, dimensions) =
     detectCollisions
 
 render context =
-    let drawBall ball = (circle 10 |> filled white |> move (ball.x, ball.y))
-        drawPad player = (rect 14 45 |> filled player.color |> move (player.x, player.y) |> rotate player.angle)
+    let drawBall ball = (circle settings.ball_size |> filled white |> move (ball.x, ball.y))
+        drawPad player = (rect settings.pad_width settings.pad_height |> filled player.color |> move (player.x, player.y) |> rotate player.angle)
         pads = map drawPad context.players
         balls = map drawBall context.balls
         board = [filled clearGrey (circle context.radius)]
-    in collage (context.size + 20) (context.size + 20) (board ++ pads ++ balls)
+    in collage (context.diameter + settings.margin) (context.diameter + settings.margin) (board ++ pads ++ balls)
 
 
-input = let delta = lift (\t -> t/20) (fps 50)
+input = let delta = lift (\t -> t/20) (fps settings.fps)
             toSignal delta keyboard_wasd keyboard_arrows window_dimensions = (delta, [keyboard_wasd, keyboard_arrows], window_dimensions)
         in sampleOn delta (lift4 toSignal delta Keyboard.wasd Keyboard.arrows Window.dimensions)
 
