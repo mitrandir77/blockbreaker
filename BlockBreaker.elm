@@ -13,7 +13,7 @@ context = {
            {x=3, y=3, vx=0, vy=1}]
     }
 
-nth l n = last (take n l)
+nth lst position = last (take position lst)
 
 clearGrey = rgb 100 100 200
 
@@ -24,49 +24,55 @@ movePlayer (player, {x}) radius =
     in { player | angle <- newAngle, x <- newX * radius, y <- newY * radius }
 
 movePlayers controls context =
-    let m x = movePlayer x context.radius
+    let mover playerControlTuple = movePlayer playerControlTuple context.radius
     in if length context.players <= length controls then
-        { context | players <- map m (zip context.players controls) }
+        { context | players <- map mover (zip context.players controls) }
     else
         error ">2 players are not supported"
 
-near k c n = n >= k-c && n <= k+c
+near a b distance = distance >= a - b && distance <= a + b
 
 within ball player = (ball.x |> near player.x 8)
                   && (ball.y |> near player.y 20)
 
 detectCollision p ball =
-    let revertedBall b = {b | vx <- 0-b.vx, vy<-0-b.vy }
+    let revertedBall b = {b | vx <- 0 - b.vx,
+                              vy <- 0 - b.vy }
     in if within ball p then revertedBall ball else ball
 
 detectPlayerCollisions player context =
-    let d balls = detectCollision player balls
-    in {context | balls <- map d context.balls }
+    let detector balls = detectCollision player balls
+    in {context | balls <- map detector context.balls }
 
 detectCollisions context =
     foldl detectPlayerCollisions context context.players
 
-moveBall b t = { b | x <- b.x + b.vx*t , y <- b.y+ b.vy*t }
+moveBall ball time = { ball | x <- ball.x + ball.vx * time,
+                              y <- ball.y + ball.vy * time }
 
-moveBalls t context =
-    let m ball = moveBall ball t
-    in {context | balls <- map m context.balls }
+moveBalls time context =
+    let mover ball = moveBall ball time
+    in {context | balls <- map mover context.balls }
 
-updateDimensions (w, h) c =
-    { c | radius <- ((min w h) - 40) / 2,
-          size <- (min w h) - 40,
-          w <- w,
-          h <- h }
+updateDimensions (width, height) context =
+    { context | radius <- ((min width height) - 40) / 2,
+                size <- (min width height) - 40,
+                w <- width,
+                h <- height }
 
-step (delta, directions, dimensions) = updateDimensions dimensions . movePlayers directions . moveBalls delta . detectCollisions
+step (delta, directions, dimensions) =
+    updateDimensions dimensions .
+    movePlayers directions .
+    moveBalls delta .
+    detectCollisions
 
-render c =
+render context =
     let drawBall ball = (circle 10 |> filled white |> move (ball.x, ball.y))
         drawPad player = (rect 14 45 |> filled player.color |> move (player.x, player.y) |> rotate player.angle)
-        pads = map drawPad c.players
-        balls = map drawBall c.balls
-        board = [filled clearGrey (circle c.radius)]
-    in collage (c.size + 20) (c.size + 20) (board ++ pads ++ balls)
+        pads = map drawPad context.players
+        balls = map drawBall context.balls
+        board = [filled clearGrey (circle context.radius)]
+    in collage (context.size + 20) (context.size + 20) (board ++ pads ++ balls)
 
 
 input = let delta = lift (\t -> t/20) (fps 50)
