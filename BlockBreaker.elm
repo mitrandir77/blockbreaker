@@ -1,8 +1,6 @@
 import Keyboard
 import Window
 
-tupleMin (w,h) = min w h
-
 context = {
     size=0,
     w=0,
