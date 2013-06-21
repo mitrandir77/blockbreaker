@@ -2,10 +2,14 @@ import Keyboard
 import Window
 
 settings = {
-    margin=20,
-    ball_size=10,
-    pad_width=14,
-    pad_height=85,
+    margin=40,
+    ballSize=10,
+    padWidth=14,
+    padHeight=85,
+    scoreColor=rgb 0 200 0,
+    scoreSize=1,
+    padSpeed=0.1,
+    ballSpeed=2,
     fps=50
     }
 
@@ -13,8 +17,8 @@ context = {
     diameter=0,
     w=0,
     h=0,
-    players=[{color=(rgb 200 0 0), angle=0, score=0, x=300, y=0},
-             {color=(rgb 0 200 0), angle=180, score=0, x=0-300, y=0}],
+    players=[{color=(rgb 200 0 0), angle=0, score=0, x=300, y=0, name="Kazet"},
+             {color=(rgb 0 200 0), angle=180, score=0, x=0-300, y=0, name="Kwaps"}],
     balls=[{x=0, y=0, vx=1, vy=0},
            {x=3, y=3, vx=0, vy=1}]
     }
@@ -24,7 +28,7 @@ nth lst position = last (take position lst)
 clearGrey = rgb 100 100 200
 
 movePlayer (player, {x}) radius = 
-    let newAngle = player.angle + x/20
+    let newAngle = player.angle + x * settings.padSpeed
         playerPos angle = (cos angle, sin angle)
         (newX, newY) = playerPos newAngle
     in { player | angle <- newAngle, x <- newX * radius, y <- newY * radius }
@@ -53,8 +57,8 @@ detectPlayerCollisions player context =
 detectCollisions context =
     foldl detectPlayerCollisions context context.players
 
-moveBall ball time = { ball | x <- ball.x + ball.vx * time,
-                              y <- ball.y + ball.vy * time }
+moveBall ball time = { ball | x <- ball.x + ball.vx * settings.ballSpeed * time,
+                              y <- ball.y + ball.vy * settings.ballSpeed * time }
 
 moveBalls time context =
     let mover ball = moveBall ball time
@@ -72,13 +76,18 @@ step (delta, directions, dimensions) =
     moveBalls delta .
     detectCollisions
 
+txt f = text . f . monospace . Text.color settings.scoreColor . toText
+
 render context =
-    let drawBall ball = (circle settings.ball_size |> filled white |> move (ball.x, ball.y))
-        drawPad player = (rect settings.pad_width settings.pad_height |> filled player.color |> move (player.x, player.y) |> rotate player.angle)
+    let drawBall ball = (circle settings.ballSize |> filled white |> move (ball.x, ball.y))
+        drawPad player = (rect settings.padWidth settings.padHeight |> filled player.color |> move (player.x, player.y) |> rotate player.angle)
+        makeScores player = " " ++ player.name ++ " " ++ show player.score
+        scoreText = txt (Text.height settings.scoreSize) (foldr (++) "" (map makeScores context.players))
+        scores = [toForm scoreText |> move (0, context.radius + settings.margin / 2)]
         pads = map drawPad context.players
         balls = map drawBall context.balls
         board = [filled clearGrey (circle context.radius)]
-    in collage (context.diameter + settings.margin) (context.diameter + settings.margin) (board ++ pads ++ balls)
+    in collage (context.diameter + 2 * settings.margin) (context.diameter + 2 * settings.margin) (board ++ pads ++ balls ++ scores)
 
 
 input = let delta = lift (\t -> t/20) (fps settings.fps)
