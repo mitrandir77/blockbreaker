@@ -2,10 +2,11 @@ import Keyboard
 import Window
 
 settings = {
-    margin=40,
-    ballSize=10,
-    padWidth=14,
-    padHeight=85,
+    -- 1 unit := radius/1000
+    margin=40, -- in pixels
+    ballSize=30.0, -- in units
+    padWidth= pi/16.0, -- radians
+    padHeight=50.0, -- in units 
     scoreColor=rgb 0 200 0,
     scoreSize=1,
     padSpeed=0.1,
@@ -13,37 +14,49 @@ settings = {
     fps=50
     }
 
+model = {
+    d=2000.0, -- diameter
+    r=1000.0  -- radius
+    }
+
 context = {
     diameter=0,
     w=0,
     h=0,
-    players=[{color=(rgb 200 0 0), angle=0, score=0, x=300, y=0, name="Kazet"},
-             {color=(rgb 0 200 0), angle=180, score=0, x=0-300, y=0, name="Kwaps"}],
+    players=[{color=(rgb 200 0 0), angle=0, score=0, x=1000, y=0, name="Kazet"},
+             {color=(rgb 0 200 0), angle=180, score=0, x=0-1000, y=0, name="Kwaps"}],
     balls=[{x=0, y=0, vx=1, vy=0},
-           {x=3, y=3, vx=0, vy=1}]
+           {x=100, y=100, vx=0, vy=1}]
     }
+
+
 
 nth lst position = last (take position lst)
 
 clearGrey = rgb 100 100 200
 
-movePlayer (player, {x}) radius = 
+movePlayer (player, {x}) =
     let newAngle = player.angle + x * settings.padSpeed
         playerPos angle = (cos angle, sin angle)
         (newX, newY) = playerPos newAngle
-    in { player | angle <- newAngle, x <- newX * radius, y <- newY * radius }
+    in { player | angle <- newAngle, x <- newX * model.r , y <- newY *  model.r }
 
 movePlayers controls context =
-    let mover playerControlTuple = movePlayer playerControlTuple context.radius
+    let mover playerControlTuple = movePlayer playerControlTuple
     in if length context.players <= length controls then
         { context | players <- map mover (zip context.players controls) }
     else
         error ">2 players are not supported"
 
-near a b distance = distance >= a - b && distance <= a + b
+near a b distance = abs (a - b) <= distance
+nearAngle a b distance =
+    let norm angle = atan2 (sin angle) (cos angle)
+        na = norm a
+        nb = norm b
+     in near na nb distance || (near norm (na- 2*pi) nb) || (near norm na (nb-2*pi))
 
-within ball player = (ball.x |> near player.x 8)
-                  && (ball.y |> near player.y 20)
+within ball player = nearAngle (atan2 ball.y ball.y) player.angle (settings.padWidth / 2.0)
+        && (near (sqrt (ball.x * ball.x  + ball.y * ball.y)) 1000.0 (settings.padHeight/2.0))
 
 detectCollision p ball =
     let revertedBall b = {b | vx <- 0 - b.vx,
@@ -65,10 +78,13 @@ moveBalls time context =
     in {context | balls <- map mover context.balls }
 
 updateDimensions (width, height) context =
-    { context | radius <- ((min width height) - 2 * settings.margin) / 2,
-                diameter <- (min width height) - 2 * settings.margin,
-                w <- width,
-                h <- height }
+    let d = (min width height) - 2 * settings.margin
+    in
+        { context | radius <- d / 2,
+                    diameter <- d,
+                    w <- width,
+                    h <- height,
+                    factor <- d/2000 }
 
 step (delta, directions, dimensions) =
     updateDimensions dimensions .
@@ -79,15 +95,20 @@ step (delta, directions, dimensions) =
 txt f = text . f . monospace . Text.color settings.scoreColor . toText
 
 render context =
-    let drawBall ball = (circle settings.ballSize |> filled white |> move (ball.x, ball.y))
-        drawPad player = (rect settings.padWidth settings.padHeight |> filled player.color |> move (player.x, player.y) |> rotate player.angle)
-        makeScores player = " " ++ player.name ++ " " ++ show player.score
-        scoreText = txt (Text.height settings.scoreSize) (foldr (++) "" (map makeScores context.players))
-        scores = [toForm scoreText |> move (0, context.radius + settings.margin / 2)]
-        pads = map drawPad context.players
-        balls = map drawBall context.balls
-        board = [filled clearGrey (circle context.radius)]
-    in collage (context.diameter + 2 * settings.margin) (context.diameter + 2 * settings.margin) (board ++ pads ++ balls ++ scores)
+    let s = (*) context.factor in
+        let drawBall ball = (circle (s settings.ballSize) |> filled white |> move (ball.x, ball.y))
+            drawPad player =
+                let
+                    pw = (2 * pi * context.radius) * (settings.padWidth / pi)
+                    ph = (s settings.padHeight)
+                in (rect ph  pw) |> filled player.color |> move (s player.x, s player.y) |> rotate player.angle
+            makeScores player = " " ++ player.name ++ " " ++ show (player.x * player.x + player.y * player.y)  ++ " " ++ show player.y ++ " " ++ show player.score
+            scoreText = txt (Text.height settings.scoreSize) (foldr (++) " " (map makeScores context.players))
+            scores = [toForm scoreText |> move (0, context.radius + settings.margin / 2)]
+            pads = map drawPad context.players
+            balls = map drawBall context.balls
+            board = [filled clearGrey (circle context.radius)]
+        in collage (context.diameter + 2 * settings.margin) (context.diameter + 2 * settings.margin) (board ++ pads ++ balls ++ scores)
 
 
 input = let delta = lift (\t -> t/20) (fps settings.fps)
