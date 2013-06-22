@@ -10,13 +10,14 @@ settings = {
     scoreColor=rgb 0 200 0,
     scoreSize=1,
     padSpeed=0.1,
-    ballSpeed=2,
+    ballSpeed=6,
     fps=50
     }
 
 model = {
     d=2000.0, -- diameter
-    r=1000.0  -- radius
+    r=1000.0,  -- radius
+    l= (2 * pi * 1000)
     }
 
 context = {
@@ -55,12 +56,15 @@ nearAngle a b distance =
         nb = norm b
      in near na nb distance || (near norm (na- 2*pi) nb) || (near norm na (nb-2*pi))
 
-within ball player = nearAngle (atan2 ball.y ball.y) player.angle (settings.padWidth / 2.0)
-        && (near (sqrt (ball.x * ball.x  + ball.y * ball.y)) 1000.0 (settings.padHeight/2.0))
+within ball player = nearAngle (atan2 ball.y ball.x) player.angle ((settings.padWidth / 2.0)+ ((settings.ballSize/model.l)* pi)) &&
+       (near (sqrt (ball.x * ball.x  + ball.y * ball.y)) 1000.0 (settings.padHeight/2.0))
 
 detectCollision p ball =
-    let revertedBall b = {b | vx <- 0 - b.vx,
-                              vy <- 0 - b.vy }
+    let
+        b_angle = 2 * p.angle - atan2 ball.vy ball.vx
+        revertedBall b = {b | vy <- 0-sin b_angle,
+                              vx <- 0-cos b_angle
+                              }
     in if within ball p then revertedBall ball else ball
 
 detectPlayerCollisions player context =
@@ -96,7 +100,7 @@ txt f = text . f . monospace . Text.color settings.scoreColor . toText
 
 render context =
     let s = (*) context.factor in
-        let drawBall ball = (circle (s settings.ballSize) |> filled white |> move (ball.x, ball.y))
+        let drawBall ball = (circle (s settings.ballSize) |> filled white |> move (s ball.x, s ball.y))
             drawPad player =
                 let
                     pw = (2 * pi * context.radius) * (settings.padWidth / pi)
