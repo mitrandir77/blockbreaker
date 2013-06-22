@@ -5,7 +5,7 @@ settings = {
     -- 1 unit := radius/1000
     margin=40, -- in pixels
     ballSize=30.0, -- in units
-    padWidth= pi/16.0, -- radians
+    padWidth= pi/8.0, -- radians
     padHeight=50.0, -- in units 
     scoreColor=rgb 0 200 0,
     scoreSize=1,
@@ -103,7 +103,7 @@ render context =
         let drawBall ball = (circle (s settings.ballSize) |> filled white |> move (s ball.x, s ball.y))
             drawPad player =
                 let
-                    pw = (2 * pi * context.radius) * (settings.padWidth / pi)
+                    pw = (sin (settings.padWidth / 2.0) * 2 * context.radius)
                     ph = (s settings.padHeight)
                 in (rect ph  pw) |> filled player.color |> move (s player.x, s player.y) |> rotate player.angle
             makeScores player = " " ++ player.name ++ " " ++ show (player.x * player.x + player.y * player.y)  ++ " " ++ show player.y ++ " " ++ show player.score
