@@ -57,16 +57,16 @@ nearAngle a b distance =
     let norm angle = atan2 (sin angle) (cos angle)
         na = norm a
         nb = norm b
-     in near na nb distance || (near norm (na- 2*pi) nb) || (near norm na (nb-2*pi))
+     in near na nb distance || (near norm (na + 2*pi) nb) || (near norm na (nb + 2*pi))
 
 within ball player = nearAngle (atan2 ball.y ball.x) player.angle ((settings.padWidth / 2.0)+ ((settings.ballSize/model.l)* pi)) &&
        (near (sqrt (ball.x * ball.x  + ball.y * ball.y)) 1000.0 (settings.padHeight/2.0))
 
 detectCollision p ball =
     let
-        b_angle = 2 * p.angle - atan2 ball.vy ball.vx
-        revertedBall b = {b | vy <- 0-sin b_angle,
-                              vx <- 0-cos b_angle
+        b_angle = 2 * (p.angle + pi) - atan2 (0- ball.vy) (0 - ball.vx)
+        revertedBall b = {b | vy <- sin b_angle,
+                              vx <- cos b_angle
                               }
     in if within ball p then revertedBall ball else ball
 
