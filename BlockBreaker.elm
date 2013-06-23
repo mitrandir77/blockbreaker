@@ -11,7 +11,8 @@ settings = {
     scoreSize=1,
     padSpeed=0.1,
     ballSpeed=6,
-    fps=50
+    fps=50,
+    blockSize=60
     }
 
 model = {
@@ -27,7 +28,9 @@ context = {
     players=[{color=(rgb 200 0 0), angle=0, score=0, x=1000, y=0, name="Kazet"},
              {color=(rgb 0 200 0), angle=180, score=0, x=0-1000, y=0, name="Kwaps"}],
     balls=[{x=0, y=0, vx=1, vy=0},
-           {x=100, y=100, vx=0, vy=1}]
+           {x=100, y=100, vx=0, vy=1}],
+    blocks=[{x=0-120, y=0}, {x=0, y=120}, {x=220, y=150} ],
+    score = 0 -- score of all players
     }
 
 
@@ -71,8 +74,22 @@ detectPlayerCollisions player context =
     let detector balls = detectCollision player balls
     in {context | balls <- map detector context.balls }
 
+
+dist a b = sqrt $ (a.x - b.x) ^2 + (a.y - b.y)^2
+
+detectBallCollisions ball context =
+    let
+        collides block = dist ball block <= (settings.ballSize + settings.blockSize)
+        colliding = filter collides context.blocks
+        notColliding = filter (not . collides) context.blocks
+    in
+        {context | blocks <- notColliding, score <- context.score + (length colliding) }
+
+
+
 detectCollisions context =
-    foldl detectPlayerCollisions context context.players
+    let newContext = foldl detectPlayerCollisions context context.players
+    in foldl detectBallCollisions newContext newContext.balls
 
 moveBall ball time = { ball | x <- ball.x + ball.vx * settings.ballSpeed * time,
                               y <- ball.y + ball.vy * settings.ballSpeed * time }
@@ -106,13 +123,16 @@ render context =
                     pw = (sin (settings.padWidth / 2.0) * 2 * context.radius)
                     ph = (s settings.padHeight)
                 in (rect ph  pw) |> filled player.color |> move (s player.x, s player.y) |> rotate player.angle
-            makeScores player = " " ++ player.name ++ " " ++ show (player.x * player.x + player.y * player.y)  ++ " " ++ show player.y ++ " " ++ show player.score
+
+            drawBlock block = circle (s settings.blockSize) |> filled red |> move (s block.x, s block.y)
+            makeScores player = " " ++ player.name ++ show context.score
             scoreText = txt (Text.height settings.scoreSize) (foldr (++) " " (map makeScores context.players))
             scores = [toForm scoreText |> move (0, context.radius + settings.margin / 2)]
             pads = map drawPad context.players
             balls = map drawBall context.balls
+            blocks = map drawBlock context.blocks
             board = [filled clearGrey (circle context.radius)]
-        in collage (context.diameter + 2 * settings.margin) (context.diameter + 2 * settings.margin) (board ++ pads ++ balls ++ scores)
+        in collage (context.diameter + 2 * settings.margin) (context.diameter + 2 * settings.margin) (board ++ pads ++ balls ++ scores ++ blocks)
 
 
 input = let delta = lift (\t -> t/20) (fps settings.fps)
