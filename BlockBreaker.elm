@@ -27,9 +27,20 @@ context = {
     h=0,
     players=[{color=(rgba 200 0 0 0.8), angle=0, score=0, x=1000, y=0, name="Kazet"},
              {color=(rgba 0 200 0 0.8), angle=180, score=0, x=0-1000, y=0, name="Kwaps"}],
-    balls=[{x=0, y=0, vx=1, vy=0},
-           {x=100, y=100, vx=0, vy=1}],
-    blocks=[{x=0-120, y=0}, {x=0, y=120}, {x=220, y=150} ],
+    balls=[{x=0, y=500, vx=1, vy=0},
+           {x=500, y=500, vx=0, vy=1}],
+    blocks=[{x=0-120, y=0},
+            {x=0, y=120},
+            {x=120, y=0},
+            {x=0, y=0-120},
+            {x=0, y=0-300},
+            {x=0, y=300},
+            {x=300, y=0},
+            {x=0-300, y=0},
+            {x=210, y=210},
+            {x=0-210, y=210},
+            {x=210, y=0-210},
+            {x=0-210, y=0-210}],
     score = 0 -- score of all players
     }
 
