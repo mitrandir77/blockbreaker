@@ -25,8 +25,8 @@ context = {
     diameter=0,
     w=0,
     h=0,
-    players=[{color=(rgba 200 0 0 60), angle=0, score=0, x=1000, y=0, name="Kazet"},
-             {color=(rgba 0 200 0 60), angle=180, score=0, x=0-1000, y=0, name="Kwaps"}],
+    players=[{color=(rgba 200 0 0 0.8), angle=0, score=0, x=1000, y=0, name="Kazet"},
+             {color=(rgba 0 200 0 0.8), angle=180, score=0, x=0-1000, y=0, name="Kwaps"}],
     balls=[{x=0, y=0, vx=1, vy=0},
            {x=100, y=100, vx=0, vy=1}],
     blocks=[{x=0-120, y=0}, {x=0, y=120}, {x=220, y=150} ],
@@ -77,9 +77,11 @@ detectPlayerCollisions player context =
 
 dist a b = sqrt $ (a.x - b.x) ^2 + (a.y - b.y)^2
 
+distCity a b = abs (a.x - b.x) + abs (a.y - b.y)
+
 detectBallCollisions ball context =
     let
-        collides block = dist ball block <= (settings.ballSize + settings.blockSize)
+        collides block = distCity ball block <= (settings.ballSize + settings.blockSize)
         colliding = filter collides context.blocks
         notColliding = filter (not . collides) context.blocks
     in
@@ -124,7 +126,7 @@ render context =
                     ph = (s settings.padHeight)
                 in (rect ph  pw) |> filled player.color |> move (s player.x, s player.y) |> rotate player.angle
 
-            drawBlock block = circle (s settings.blockSize) |> filled red |> move (s block.x, s block.y)
+            drawBlock block = square (s (2.0 * settings.blockSize / sqrt 2.0 )) |> filled red |> move (s block.x, s block.y) |> rotate (pi/4)
             makeScores player = " " ++ player.name ++ show context.score
             scoreText = txt (Text.height settings.scoreSize) (foldr (++) " " (map makeScores context.players))
             scores = [toForm scoreText |> move (0, context.radius + settings.margin / 2)]
