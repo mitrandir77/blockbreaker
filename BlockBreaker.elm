@@ -27,7 +27,7 @@ context = {
     h=0,
     players=[{color=(rgba 200 0 0 0.8), angle=0, score=0, x=1000, y=0, name="Kazet"},
              {color=(rgba 0 200 0 0.8), angle=180, score=0, x=0-1000, y=0, name="Kwaps"}],
-    balls=[{x=0, y=500, vx=1, vy=0},
+    balls=[{x=0-300, y=0-300, vx=1, vy=0},
            {x=500, y=500, vx=0, vy=1}],
     blocks=[{x=0-120, y=0},
             {x=0, y=120},
@@ -90,19 +90,35 @@ dist a b = sqrt $ (a.x - b.x) ^2 + (a.y - b.y)^2
 
 distCity a b = abs (a.x - b.x) + abs (a.y - b.y)
 
-detectBallCollisions ball context =
-    let
-        collides block = distCity ball block <= (settings.ballSize + settings.blockSize)
-        colliding = filter collides context.blocks
-        notColliding = filter (not . collides) context.blocks
-    in
-        {context | blocks <- notColliding, score <- context.score + (length colliding) }
+sgn x = if | x == 0 -> 0
+           | x < 0  -> 0-1
+           | otherwise -> 1
 
+ballBlockCollision block (ball, blocks)=
+    let
+        collides = distCity ball block <= (settings.ballSize + settings.blockSize)
+        block_angle = let s = (sgn (block.x - ball.x), sgn (ball.y - block.y)) in
+        if | s == (0-1, 0-1) -> pi/4
+           | s == (0-1, 1) -> 3.0 * pi/4
+           | s == (1, 1) -> 5.0 * pi/4
+           | s == (1, 0-1) -> 7.0 * pi/4
+           | s == (0, 0-1) -> 0.0
+           | s == (0, 1) -> pi/2.0
+           | s == (0-1, 0) -> pi/2.0
+           | otherwise  -> 3.0 *  pi/2.0
+        ball_angle = pi +  (2 * (block_angle) - atan2 (0- ball.vy) (0 - ball.vx))
+        newBall = {ball | vx<- cos ball_angle, vy<-sin ball_angle }
+    in if collides then (newBall, blocks) else (ball, block::blocks)
+
+detectBallCollisions ball (context, balls) =
+    let (newBall, newBlocks)  = foldl ballBlockCollision (ball, []) context.blocks
+    in ({context | blocks <- newBlocks}, newBall::balls)
 
 
 detectCollisions context =
-    let newContext = foldl detectPlayerCollisions context context.players
-    in foldl detectBallCollisions newContext newContext.balls
+    let contextAfterPlayerCollisions = foldl detectPlayerCollisions context context.players
+        (contextAfterBallCollisions, newBalls) = foldl detectBallCollisions (contextAfterPlayerCollisions, []) contextAfterPlayerCollisions.balls
+    in {contextAfterBallCollisions | balls <- newBalls}
 
 moveBall ball time = { ball | x <- ball.x + ball.vx * settings.ballSpeed * time,
                               y <- ball.y + ball.vy * settings.ballSpeed * time }
