@@ -6,7 +6,7 @@ settings = {
     margin=40, -- in pixels
     ballSize=30.0, -- in units
     padWidth= pi/8.0, -- radians
-    padHeight=50.0, -- in units 
+    padHeight=50.0, -- in units
     scoreColor=rgb 0 200 0,
     scoreSize=1,
     blockColor=rgb 200 200 200,
@@ -15,6 +15,12 @@ settings = {
     ballSpeed=6,
     fps=50,
     blockSize=60
+    }
+
+primitives = {
+    block s = square (s (2.0 * settings.blockSize / sqrt 2.0 )) |> filled red,
+    pad ph pw color = (rect ph  pw) |> filled color,
+    ball s color = (circle (s settings.ballSize)) |> filled color
     }
 
 model = {
@@ -59,9 +65,9 @@ context = {
 clearGrey = rgb 100 100 200
 
 flatten listList =
-  foldl (++) [] listList
+    foldl (++) [] listList
 
-resetBall ball = 
+resetBall ball =
     { ball | moving <- False }
 
 resetPlayerBalls player =
@@ -99,10 +105,11 @@ nearAngle a b distance =
     let norm angle = atan2 (sin angle) (cos angle)
         na = norm a
         nb = norm b
-     in near na nb distance || (near ((norm na) + 2*pi) nb distance) || (near na ((norm nb) + 2*pi)  distance)
+    in near na nb distance || (near ((norm na) + 2*pi) nb distance) || (near na ((norm nb) + 2*pi)  distance)
 
-within ball player = nearAngle (atan2 ball.y ball.x) player.angle ((settings.padWidth / 2.0)+ ((settings.ballSize/model.l)* pi)) &&
-       (near (sqrt (ball.x * ball.x  + ball.y * ball.y)) 1000.0 (settings.padHeight/2.0))
+within ball player =
+    nearAngle (atan2 ball.y ball.x) player.angle ((settings.padWidth / 2.0) + ((settings.ballSize/model.l)* pi)) &&
+    (near (sqrt (ball.x * ball.x  + ball.y * ball.y)) 1000.0 (settings.padHeight/2.0))
 
 detectCollision p ball =
     let
@@ -136,22 +143,22 @@ ballBlockCollision block (ball, blocks)=
            | s == (0-1, 0) -> pi/2.0
            | otherwise  -> 3.0 *  pi/2.0
         ball_angle = pi +  (2 * (block_angle) - atan2 (0- ball.vy) (0 - ball.vx))
-        newBall = {ball | vx<- cos ball_angle, vy<-sin ball_angle }
+        newBall = { ball | vx <- cos ball_angle,
+                           vy <- sin ball_angle }
     in if collides then (newBall, blocks) else (ball, block::blocks)
 
 detectBallCollisions ball (context, balls) =
     let (newBall, newBlocks)  = foldl ballBlockCollision (ball, []) context.blocks
-    in ({context | blocks <- newBlocks}, newBall::balls)
+    in ({ context | blocks <- newBlocks }, newBall::balls)
 
 detectPlayerBallCollisions player (context, players) =
     let (newContext, newBalls)  = foldl detectBallCollisions (context, []) player.balls
     in (newContext, players ++ [{player | balls <- newBalls}])
 
-
 detectCollisions context =
-    let contextAfterPlayerCollisions = { context | players <- map (\p -> detectPlayerCollisions p context) context.players }
-        (contextAfterBallCollisions, newPlayers) = foldl detectPlayerBallCollisions (contextAfterPlayerCollisions, []) contextAfterPlayerCollisions.players
-    in {contextAfterBallCollisions | players <- newPlayers }
+    let ctxAfterPlayerCollisions = { context | players <- map (\p -> detectPlayerCollisions p context) context.players }
+        (ctxAfterBallCollisions, newPlayers) = foldl detectPlayerBallCollisions (ctxAfterPlayerCollisions, []) ctxAfterPlayerCollisions.players
+    in { ctxAfterBallCollisions | players <- newPlayers }
 
 moveBall ball time player context =
     if ball.moving then
@@ -168,12 +175,11 @@ moveBalls time context =
 
 updateDimensions (width, height) context =
     let d = (min width height) - 2 * settings.margin
-    in
-        { context | radius <- d / 2,
-                    diameter <- d,
-                    w <- width,
-                    h <- height,
-                    factor <- d/2000 }
+    in { context | radius <- d / 2,
+                   diameter <- d,
+                   w <- width,
+                   h <- height,
+                   factor <- d/2000 }
 
 step (delta, directions, dimensions) =
     updateDimensions dimensions .
@@ -185,22 +191,22 @@ txt f = text . f . monospace . Text.color settings.scoreColor . toText
 
 render context =
     let s = (*) context.factor in
-        let drawBall ball color = (circle (s settings.ballSize) |> filled color |> move (s ball.x, s ball.y))
+        let drawBall ball color = (primitives.ball s color) |> move (s ball.x, s ball.y)
             drawPlayer player =
                 let
                     pw = (sin (settings.padWidth / 2.0) * 2 * context.radius)
                     ph = (s settings.padHeight)
                     balls = map (\ball -> drawBall ball player.color) player.balls
-                in  balls ++ [(rect ph  pw) |> filled player.color |> move (s player.x, s player.y) |> rotate player.angle]
+                in  balls ++ [(primitives.pad ph pw player.color) |> move (s player.x, s player.y) |> rotate player.angle]
 
-            drawBlock block = square (s (2.0 * settings.blockSize / sqrt 2.0 )) |> filled red |> move (s block.x, s block.y) |> rotate (pi/4)
+            drawBlock block = (primitives.block s) |> move (s block.x, s block.y) |> rotate (pi/4)
             makeScores player = " " ++ player.name ++ show context.score
             scoreText = txt (Text.height settings.scoreSize) (foldr (++) " " (map makeScores context.players))
             scores = [toForm scoreText |> move (0, context.radius + settings.margin / 2)]
             players = flatten (map drawPlayer context.players)
             blocks = map drawBlock context.blocks
             board = [filled clearGrey (circle context.radius)]
-        in collage (context.diameter + 2 * settings.margin) (context.diameter + 2 * settings.margin) (board ++ players ++ scores ++ blocks)
+    in collage (context.diameter + 2 * settings.margin) (context.diameter + 2 * settings.margin) (board ++ players ++ scores ++ blocks)
 
 
 input =
