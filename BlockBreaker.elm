@@ -27,15 +27,15 @@ context = {
     diameter=0,
     w=0,
     h=0,
-    blocks=[{x=0-120, y=0}, {x=0, y=120}, {x=220, y=150} ],
-    players=[{ color=rgb 200 0 0,
+    blocks=[{x=0-120, y=0}, {x=0, y=120}, {x=220, y=150}],
+    players=[{ color=(rgba 200 0 0 0.8),
                angle=0,
                score=0,
                x=1000,
                y=0,
                name="Kazet",
                balls=[{x=0, y=0, vx=1, vy=0, moving=False }]},
-             { color=rgb 0 200 0,
+             { color=(rgba 0 200 0 0.8),
                angle=180,
                score=0,
                x=0-1000,
@@ -88,16 +88,16 @@ nearAngle a b distance =
     let norm angle = atan2 (sin angle) (cos angle)
         na = norm a
         nb = norm b
-    in near na nb distance || (near norm (na- 2*pi) nb) || (near norm na (nb-2*pi))
+     in near na nb distance || (near ((norm na) + 2*pi) nb distance) || (near na ((norm nb) + 2*pi)  distance)
 
 within ball player = nearAngle (atan2 ball.y ball.x) player.angle ((settings.padWidth / 2.0)+ ((settings.ballSize/model.l)* pi)) &&
        (near (sqrt (ball.x * ball.x  + ball.y * ball.y)) 1000.0 (settings.padHeight/2.0))
 
 detectCollision p ball =
     let
-        b_angle = 2 * p.angle - atan2 ball.vy ball.vx
-        revertedBall b = {b | vy <- 0-sin b_angle,
-                              vx <- 0-cos b_angle
+        b_angle = 2 * (p.angle + pi) - atan2 (0- ball.vy) (0 - ball.vx)
+        revertedBall b = {b | vy <- sin b_angle,
+                              vx <- cos b_angle
                               }
     in if within ball p then revertedBall ball else ball
 
@@ -106,17 +106,41 @@ detectPlayerCollisions player context =
 
 dist a b = sqrt $ (a.x - b.x)^2 + (a.y - b.y)^2
 
-detectBallCollisions ball context =
-    let
-        collides block = dist ball block <= (settings.ballSize + settings.blockSize)
-        colliding = filter collides context.blocks
-        notColliding = filter (not . collides) context.blocks
-    in
-        {context | blocks <- notColliding, score <- context.score + (length colliding) }
+distCity a b = abs (a.x - b.x) + abs (a.y - b.y)
 
-detectCollisions context = 
-    let newContext = { context | players <- map (\player -> detectPlayerCollisions player context) context.players }
-    in foldl detectBallCollisions newContext (flatten (map .balls newContext.players))
+sgn x = if | x == 0 -> 0
+           | x < 0  -> 0-1
+           | otherwise -> 1
+
+ballBlockCollision block (ball, blocks)=
+    let
+        collides = distCity ball block <= (settings.ballSize + settings.blockSize)
+        block_angle = let s = (sgn (block.x - ball.x), sgn (ball.y - block.y)) in
+        if | s == (0-1, 0-1) -> pi/4
+           | s == (0-1, 1) -> 3.0 * pi/4
+           | s == (1, 1) -> 5.0 * pi/4
+           | s == (1, 0-1) -> 7.0 * pi/4
+           | s == (0, 0-1) -> 0.0
+           | s == (0, 1) -> pi/2.0
+           | s == (0-1, 0) -> pi/2.0
+           | otherwise  -> 3.0 *  pi/2.0
+        ball_angle = pi +  (2 * (block_angle) - atan2 (0- ball.vy) (0 - ball.vx))
+        newBall = {ball | vx<- cos ball_angle, vy<-sin ball_angle }
+    in if collides then (newBall, blocks) else (ball, block::blocks)
+
+detectBallCollisions ball (context, balls) =
+    let (newBall, newBlocks)  = foldl ballBlockCollision (ball, []) context.blocks
+    in ({context | blocks <- newBlocks}, newBall::balls)
+
+detectPlayerBallCollisions player (context, players) =
+    let (newContext, newBalls)  = foldl detectBallCollisions (context, []) player.balls
+    in (newContext, players ++ [{player | balls <- newBalls}])
+
+
+detectCollisions context =
+    let contextAfterPlayerCollisions = { context | players <- map (\p -> detectPlayerCollisions p context) context.players }
+        (contextAfterBallCollisions, newPlayers) = foldl detectPlayerBallCollisions (contextAfterPlayerCollisions, []) contextAfterPlayerCollisions.players
+    in {contextAfterBallCollisions | players <- newPlayers }
 
 moveBall ball time player context =
     if ball.moving then
@@ -158,7 +182,7 @@ render context =
                     balls = map (\ball -> drawBall ball player.color) player.balls
                 in  balls ++ [(rect ph  pw) |> filled player.color |> move (s player.x, s player.y) |> rotate player.angle]
 
-            drawBlock block = circle (s settings.blockSize) |> filled settings.blockColor |> move (s block.x, s block.y)
+            drawBlock block = square (s (2.0 * settings.blockSize / sqrt 2.0 )) |> filled red |> move (s block.x, s block.y) |> rotate (pi/4)
             makeScores player = " " ++ player.name ++ show context.score
             scoreText = txt (Text.height settings.scoreSize) (foldr (++) " " (map makeScores context.players))
             scores = [toForm scoreText |> move (0, context.radius + settings.margin / 2)]
