@@ -10,9 +10,9 @@ settings = {
     scoreColor=rgb 0 200 0,
     scoreSize=1,
     blockColor=rgb 200 200 200,
-    padSpeed=0.1,
+    padSpeed=0.03,
     initialBallPadDistance=30,
-    ballSpeed=6,
+    ballSpeed=9,
     fps=50,
     blockSize=60
     }
