@@ -111,13 +111,17 @@ within ball player =
     nearAngle (atan2 ball.y ball.x) player.angle ((settings.padWidth / 2.0) + ((settings.ballSize/model.l)* pi)) &&
     (near (sqrt (ball.x * ball.x  + ball.y * ball.y)) 1000.0 (settings.padHeight/2.0))
 
+outOfBoard ball = (near (sqrt (ball.x * ball.x  + ball.y * ball.y)) 1050.0 (settings.padHeight/2.0))
+
 detectCollision p ball =
     let
         b_angle = 2 * (p.angle + pi) - atan2 (0- ball.vy) (0 - ball.vx)
         revertedBall b = {b | vy <- sin b_angle,
                               vx <- cos b_angle
                               }
-    in if within ball p then revertedBall ball else ball
+    in if | within ball p -> revertedBall ball
+          | outOfBoard ball -> resetBall ball
+          | otherwise -> ball
 
 detectPlayerCollisions player context =
     { player | balls <- map (\ball -> detectCollision player ball) player.balls }
@@ -200,13 +204,14 @@ render context =
                 in  balls ++ [(primitives.pad ph pw player.color) |> move (s player.x, s player.y) |> rotate player.angle]
 
             drawBlock block = (primitives.block s) |> move (s block.x, s block.y) |> rotate (pi/4)
-            makeScores player = " " ++ player.name ++ show context.score
+            makeScores player = " " ++ player.name ++ show player.score
             scoreText = txt (Text.height settings.scoreSize) (foldr (++) " " (map makeScores context.players))
             scores = [toForm scoreText |> move (0, context.radius + settings.margin / 2)]
             players = flatten (map drawPlayer context.players)
             blocks = map drawBlock context.blocks
             board = [filled clearGrey (circle context.radius)]
-    in collage (context.diameter + 2 * settings.margin) (context.diameter + 2 * settings.margin) (board ++ players ++ scores ++ blocks)
+            gameOver = if length context.blocks == 0 then [(txt (Text.height (5 * settings.scoreSize)) "GAME OVER") |> toForm |> move (s 200, s 400)] else []
+    in collage (context.diameter + 2 * settings.margin) (context.diameter + 2 * settings.margin) (board ++ players ++ scores ++ blocks ++ gameOver)
 
 
 input =
