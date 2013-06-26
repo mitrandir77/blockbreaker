@@ -186,11 +186,15 @@ updateDimensions (width, height) context =
                    h <- height,
                    factor <- d/2000 }
 
+
+checkEnd context = if length context.blocks == 0 then resetAllBalls context else context
+
 step (delta, directions, dimensions) =
     updateDimensions dimensions .
     movePlayers directions .
     moveBalls delta .
-    detectCollisions
+    detectCollisions .
+    checkEnd
 
 txt f = text . f . monospace . Text.color settings.scoreColor . toText
 
@@ -211,7 +215,7 @@ render context =
             players = flatten (map drawPlayer context.players)
             blocks = map drawBlock context.blocks
             board = [filled clearGrey (circle context.radius)]
-            gameOver = if length context.blocks == 0 then [(txt (Text.height (5 * settings.scoreSize)) "GAME OVER") |> toForm |> move (s 200, s 400)] else []
+            gameOver = if length context.blocks == 0 then [filled clearGrey <| square <| context.radius * 2,(txt (Text.height (5 * settings.scoreSize)) "GAME OVER") |> toForm |> move (s 200, s 400)] else []
     in collage (context.diameter + 2 * settings.margin) (context.diameter + 2 * settings.margin) (board ++ players ++ scores ++ blocks ++ gameOver)
 
 

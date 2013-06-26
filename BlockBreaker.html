@@ -1,0 +1,400 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="UTF-8"><title>Main</title><script type="text/javascript" src="/home/mitrandir77/.cabal/share/Elm-0.8.0.3/elm-runtime.js"></script><script type="text/javascript">
+Elm.Main = function(elm){
+  var N = Elm.Native, _N = N.Utils(elm), _L = N.List(elm), _E = N.Error(elm), _str = N.JavaScript(elm).toString;
+  var $op = {};
+  var _ = Elm.Text(elm); var Text = _; var hiding={link:1, color:1, height:1}; for(var k in _){if(k in hiding)continue;eval('var '+k+'=_["'+k+'"]')}
+  var _ = Elm.Prelude(elm); var Prelude = _; var hiding={}; for(var k in _){if(k in hiding)continue;eval('var '+k+'=_["'+k+'"]')}
+  var _ = Elm.Signal(elm); var Signal = _; var hiding={}; for(var k in _){if(k in hiding)continue;eval('var '+k+'=_["'+k+'"]')}
+  var _ = Elm.List(elm); var List = _; var hiding={}; for(var k in _){if(k in hiding)continue;eval('var '+k+'=_["'+k+'"]')}
+  var _ = Elm.Maybe(elm); var Maybe = _; var hiding={}; for(var k in _){if(k in hiding)continue;eval('var '+k+'=_["'+k+'"]')}
+  var _ = Elm.Time(elm); var Time = _; var hiding={}; for(var k in _){if(k in hiding)continue;eval('var '+k+'=_["'+k+'"]')}
+  var _ = Elm.Graphics.Element(elm); var Graphics = Graphics||{};Graphics.Element = _; var hiding={}; for(var k in _){if(k in hiding)continue;eval('var '+k+'=_["'+k+'"]')}
+  var _ = Elm.Color(elm); var Color = _; var hiding={}; for(var k in _){if(k in hiding)continue;eval('var '+k+'=_["'+k+'"]')}
+  var _ = Elm.Graphics.Collage(elm); var Graphics = Graphics||{};Graphics.Collage = _; var hiding={}; for(var k in _){if(k in hiding)continue;eval('var '+k+'=_["'+k+'"]')}
+  var _ = Elm.Keyboard(elm); var Keyboard = _;
+  var _ = Elm.Window(elm); var Window = _;
+  var flatten_5 = function(listList_42){
+    return A3(foldl, function(x_43){
+      return function(y_44){
+        return _L.append(x_43,y_44);};}, _L.Nil, listList_42);};
+  var resetBall_6 = function(ball_45){
+    return _N.replace([['moving',false]], ball_45);};
+  var resetPlayerBalls_7 = function(player_46){
+    return _N.replace([['balls',A2(map, function(b_47){
+      return resetBall_6(b_47);}, player_46.balls)]], player_46);};
+  var resetAllBalls_8 = function(context_48){
+    return _N.replace([['players',A2(map, function(p_49){
+      return resetPlayerBalls_7(p_49);}, context_48.players)]], context_48);};
+  var startBall_9 = function(ball_50){
+    return _N.replace([['moving',true]], ball_50);};
+  var startBalls_10 = function(balls_51){
+    return A2(map, startBall_9, balls_51);};
+  var nth_11 = F2(function(lst_52, position_53){
+    return last(A2(take, position_53, lst_52));});
+  var movePlayer_12 = function(_95000_54){
+    return function(){ 
+    switch (_95000_54.ctor) {
+      case 'Tuple2':
+        return function(){
+          var playerPos_58 = function(angle_63){
+            return {ctor:"Tuple2", _0:cos(angle_63), _1:sin(angle_63)};};
+          var startBallsIfNeeded_62 = function(balls_68){
+            return (_N.eq(_95000_54._1.y,1)?startBalls_10(balls_68):balls_68);};
+          var newAngle_57 = (_95000_54._0.angle+(_95000_54._1.x*settings_0.padSpeed));
+          var _90000_59 = playerPos_58(newAngle_57);
+          var newX_60 = function(){ 
+          switch (_90000_59.ctor) {
+            case 'Tuple2':
+              return _90000_59._0;
+          }_E.Case('Line 90, Column 24') }();
+          var newY_61 = function(){ 
+          switch (_90000_59.ctor) {
+            case 'Tuple2':
+              return _90000_59._1;
+          }_E.Case('Line 90, Column 24') }();
+          return _N.replace([['angle',newAngle_57],['x',(newX_60*model_2.r)],['y',(newY_61*model_2.r)],['balls',startBallsIfNeeded_62(_95000_54._0.balls)]], _95000_54._0);}();
+    }_E.Case('Line 88, Column 5') }();};
+  var movePlayers_13 = F2(function(controls_69, context_70){
+    return ((_N.cmp(length(context_70.players),length(controls_69)).ctor!=='GT')?_N.replace([['players',A2(map, movePlayer_12, A2(zip, context_70.players, controls_69))]], context_70):error(_str('>2 players are not supported')));});
+  var near_14 = F3(function(a_71, b_72, distance_73){
+    return (_N.cmp(abs((a_71-b_72)),distance_73).ctor!=='GT');});
+  var nearAngle_15 = F3(function(a_74, b_75, distance_76){
+    return function(){
+      var norm_77 = function(angle_80){
+        return A2(atan2, sin(angle_80), cos(angle_80));};
+      var na_78 = norm_77(a_74);
+      var nb_79 = norm_77(b_75);
+      return (A3(near_14, na_78, nb_79, distance_76)||(A3(near_14, (norm_77(na_78)+(2*pi)), nb_79, distance_76)||A3(near_14, na_78, (norm_77(nb_79)+(2*pi)), distance_76)));}();});
+  var within_16 = F2(function(ball_81, player_82){
+    return (A3(nearAngle_15, A2(atan2, ball_81.y, ball_81.x), player_82.angle, ((settings_0.padWidth/2.0)+((settings_0.ballSize/model_2.l)*pi)))&&A3(near_14, sqrt(((ball_81.x*ball_81.x)+(ball_81.y*ball_81.y))), 1000.0, (settings_0.padHeight/2.0)));});
+  var outOfBoard_17 = function(ball_83){
+    return A3(near_14, sqrt(((ball_83.x*ball_83.x)+(ball_83.y*ball_83.y))), 1050.0, (settings_0.padHeight/2.0));};
+  var detectCollision_18 = F2(function(p_84, ball_85){
+    return function(){
+      var revertedBall_87 = function(b_88){
+        return _N.replace([['vy',sin(b_angle_86)],['vx',cos(b_angle_86)]], b_88);};
+      var b_angle_86 = ((2*(p_84.angle+pi))-A2(atan2, (0-ball_85.vy), (0-ball_85.vx)));
+      return (A2(within_16, ball_85, p_84) ? {ctor:"Tuple2", _0:revertedBall_87(ball_85), _1:0} : (outOfBoard_17(ball_85) ? {ctor:"Tuple2", _0:resetBall_6(ball_85), _1:(0-3)} : {ctor:"Tuple2", _0:ball_85, _1:0}));}();});
+  var detectPlayerCollisions_19 = F2(function(player_89, context_90){
+    return function(){
+      var _127000_91 = unzip(A2(map, detectCollision_18(player_89), player_89.balls));
+      var newBalls_92 = function(){ 
+      switch (_127000_91.ctor) {
+        case 'Tuple2':
+          return _127000_91._0;
+      }_E.Case('Line 127, Column 30') }();
+      var scores_93 = function(){ 
+      switch (_127000_91.ctor) {
+        case 'Tuple2':
+          return _127000_91._1;
+      }_E.Case('Line 127, Column 30') }();
+      return _N.replace([['balls',newBalls_92],['score',(player_89.score+sum(scores_93))]], player_89);}();});
+  var dist_20 = F2(function(a_98, b_99){
+    return sqrt((Math.pow((a_98.x-b_99.x),2)+Math.pow((a_98.y-b_99.y),2)));});
+  var distCity_21 = F2(function(a_100, b_101){
+    return (abs((a_100.x-b_101.x))+abs((a_100.y-b_101.y)));});
+  var sgn_22 = function(x_102){
+    return (_N.eq(x_102,0) ? 0 : ((_N.cmp(x_102,0).ctor==='LT') ? (0-1) : 1));};
+  var ballBlockCollision_23 = F2(function(block_103, _153000_104){
+    return function(){ 
+    switch (_153000_104.ctor) {
+      case 'Tuple3':
+        return function(){
+          var collides_108 = (_N.cmp(A2(distCity_21, _153000_104._0, block_103),(settings_0.ballSize+settings_0.blockSize)).ctor!=='GT');
+          var block_angle_109 = function(){
+            var s_112 = {ctor:"Tuple2", _0:sgn_22((block_103.x-_153000_104._0.x)), _1:sgn_22((_153000_104._0.y-block_103.y))};
+            return (_N.eq(s_112,{ctor:"Tuple2", _0:(0-1), _1:(0-1)}) ? (pi/4) : (_N.eq(s_112,{ctor:"Tuple2", _0:(0-1), _1:1}) ? ((3.0*pi)/4) : (_N.eq(s_112,{ctor:"Tuple2", _0:1, _1:1}) ? ((5.0*pi)/4) : (_N.eq(s_112,{ctor:"Tuple2", _0:1, _1:(0-1)}) ? ((7.0*pi)/4) : (_N.eq(s_112,{ctor:"Tuple2", _0:0, _1:(0-1)}) ? 0.0 : (_N.eq(s_112,{ctor:"Tuple2", _0:0, _1:1}) ? (pi/2.0) : (_N.eq(s_112,{ctor:"Tuple2", _0:(0-1), _1:0}) ? (pi/2.0) : ((3.0*pi)/2.0))))))));}();
+          var ball_angle_110 = (pi+((2*block_angle_109)-A2(atan2, (0-_153000_104._0.vy), (0-_153000_104._0.vx))));
+          var newBall_111 = _N.replace([['vx',cos(ball_angle_110)],['vy',sin(ball_angle_110)]], _153000_104._0);
+          return (collides_108?{ctor:"Tuple3", _0:newBall_111, _1:_153000_104._1, _2:(1+_153000_104._2)}:{ctor:"Tuple3", _0:_153000_104._0, _1:_L.Cons(block_103,_153000_104._1), _2:_153000_104._2});}();
+    }_E.Case('Line 139, Column 5') }();});
+  var detectBallCollisions_24 = F2(function(ball_113, _157000_114){
+    return function(){ 
+    switch (_157000_114.ctor) {
+      case 'Tuple3':
+        return function(){
+          var _156000_118 = A3(foldl, ballBlockCollision_23, {ctor:"Tuple3", _0:ball_113, _1:_L.Nil, _2:0}, _157000_114._0.blocks);
+          var newBall_119 = function(){ 
+          switch (_156000_118.ctor) {
+            case 'Tuple3':
+              return _156000_118._0;
+          }_E.Case('Line 156, Column 44') }();
+          var newBlocks_120 = function(){ 
+          switch (_156000_118.ctor) {
+            case 'Tuple3':
+              return _156000_118._1;
+          }_E.Case('Line 156, Column 44') }();
+          var ballScore_121 = function(){ 
+          switch (_156000_118.ctor) {
+            case 'Tuple3':
+              return _156000_118._2;
+          }_E.Case('Line 156, Column 44') }();
+          return {ctor:"Tuple3", _0:_N.replace([['blocks',newBlocks_120]], _157000_114._0), _1:_L.Cons(newBall_119,_157000_114._1), _2:(_157000_114._2+ballScore_121)};}();
+    }_E.Case('Line 156, Column 5') }();});
+  var detectPlayerBallCollisions_25 = F2(function(player_131, _161000_132){
+    return function(){ 
+    switch (_161000_132.ctor) {
+      case 'Tuple2':
+        return function(){
+          var _160000_135 = A3(foldl, detectBallCollisions_24, {ctor:"Tuple3", _0:_161000_132._0, _1:_L.Nil, _2:player_131.score}, player_131.balls);
+          var newContext_136 = function(){ 
+          switch (_160000_135.ctor) {
+            case 'Tuple3':
+              return _160000_135._0;
+          }_E.Case('Line 160, Column 45') }();
+          var newBalls_137 = function(){ 
+          switch (_160000_135.ctor) {
+            case 'Tuple3':
+              return _160000_135._1;
+          }_E.Case('Line 160, Column 45') }();
+          var newScore_138 = function(){ 
+          switch (_160000_135.ctor) {
+            case 'Tuple3':
+              return _160000_135._2;
+          }_E.Case('Line 160, Column 45') }();
+          return {ctor:"Tuple2", _0:newContext_136, _1:_L.append(_161000_132._1,_L.Cons(_N.replace([['balls',newBalls_137],['score',newScore_138]], player_131),_L.Nil))};}();
+    }_E.Case('Line 160, Column 5') }();});
+  var detectCollisions_26 = function(context_148){
+    return function(){
+      var ctxAfterPlayerCollisions_149 = _N.replace([['players',A2(map, function(p_153){
+        return A2(detectPlayerCollisions_19, p_153, context_148);}, context_148.players)]], context_148);
+      var _165000_150 = A3(foldl, detectPlayerBallCollisions_25, {ctor:"Tuple2", _0:ctxAfterPlayerCollisions_149, _1:_L.Nil}, ctxAfterPlayerCollisions_149.players);
+      var ctxAfterBallCollisions_151 = function(){ 
+      switch (_165000_150.ctor) {
+        case 'Tuple2':
+          return _165000_150._0;
+      }_E.Case('Line 165, Column 48') }();
+      var newPlayers_152 = function(){ 
+      switch (_165000_150.ctor) {
+        case 'Tuple2':
+          return _165000_150._1;
+      }_E.Case('Line 165, Column 48') }();
+      return _N.replace([['players',newPlayers_152]], ctxAfterBallCollisions_151);}();};
+  var moveBall_27 = F4(function(ball_158, time_159, player_160, context_161){
+    return (ball_158.moving?_N.replace([['x',(ball_158.x+((ball_158.vx*settings_0.ballSpeed)*time_159))],['y',(ball_158.y+((ball_158.vy*settings_0.ballSpeed)*time_159))]], ball_158):_N.replace([['x',((model_2.r-settings_0.initialBallPadDistance)*cos(player_160.angle))],['y',((model_2.r-settings_0.initialBallPadDistance)*sin(player_160.angle))],['vx',(0-cos(player_160.angle))],['vy',(0-sin(player_160.angle))]], ball_158));});
+  var moveBalls_28 = F2(function(time_162, context_163){
+    return function(){
+      var mover_164 = function(player_165){
+        return _N.replace([['balls',A2(map, function(ball_166){
+          return A4(moveBall_27, ball_166, time_162, player_165, context_163);}, player_165.balls)]], player_165);};
+      return _N.replace([['players',A2(map, mover_164, context_163.players)]], context_163);}();});
+  var updateDimensions_29 = F2(function(_187000_167, context_168){
+    return function(){ 
+    switch (_187000_167.ctor) {
+      case 'Tuple2':
+        return function(){
+          var d_171 = (A2(min, _187000_167._0, _187000_167._1)-(2*settings_0.margin));
+          return _N.replace([['radius',(d_171/2)],['diameter',d_171],['w',_187000_167._0],['h',_187000_167._1],['factor',(d_171/2000)]], context_168);}();
+    }_E.Case('Line 182, Column 5') }();});
+  var checkEnd_30 = function(context_172){
+    return (_N.eq(length(context_172.blocks),0)?resetAllBalls_8(context_172):context_172);};
+  var step_31 = function(_197000_173){
+    return function(){ 
+    switch (_197000_173.ctor) {
+      case 'Tuple3':
+        return function(x){
+          return A2(updateDimensions_29, _197000_173._2, A2(movePlayers_13, _197000_173._1, A2(moveBalls_28, _197000_173._0, detectCollisions_26(checkEnd_30(x)))));};
+    }_E.Case('Line 193, Column 5') }();};
+  var txt_32 = function(f_177){
+    return function(x){
+      return text(f_177(monospace(A2(Text.color, settings_0.scoreColor, toText(x)))));};};
+  var render_33 = function(context_178){
+    return function(){
+      var s_179 = function(x_180){
+        return function(y_181){
+          return (x_180*y_181);};}(context_178.factor);
+      return function(){
+        var drawBall_182 = F2(function(ball_192, color_193){
+          return A2(move, {ctor:"Tuple2", _0:s_179(ball_192.x), _1:s_179(ball_192.y)}, A2(primitives_1.ball, s_179, color_193));});
+        var drawPlayer_183 = function(player_194){
+          return function(){
+            var pw_195 = ((2*sin((settings_0.padWidth/2.0)))*context_178.radius);
+            var ph_196 = s_179(settings_0.padHeight);
+            var balls_197 = A2(map, function(ball_198){
+              return A2(drawBall_182, ball_198, player_194.color);}, player_194.balls);
+            return _L.append(balls_197,_L.Cons(A2(rotate, player_194.angle, A2(move, {ctor:"Tuple2", _0:s_179(player_194.x), _1:s_179(player_194.y)}, A3(primitives_1.pad, ph_196, pw_195, player_194.color))),_L.Nil));}();};
+        var drawBlock_184 = function(block_199){
+          return A2(rotate, (pi/4), A2(move, {ctor:"Tuple2", _0:s_179(block_199.x), _1:s_179(block_199.y)}, primitives_1.block(s_179)));};
+        var makeScores_185 = function(player_200){
+          return _L.append(_str(' '),_L.append(player_200.name,show(player_200.score)));};
+        var scoreText_186 = A2(txt_32, Text.height(settings_0.scoreSize), A3(foldr, function(x_201){
+          return function(y_202){
+            return _L.append(x_201,y_202);};}, _str(' '), A2(map, makeScores_185, context_178.players)));
+        var scores_187 = _L.Cons(A2(move, {ctor:"Tuple2", _0:0, _1:(context_178.radius+(settings_0.margin/2))}, toForm(scoreText_186)),_L.Nil);
+        var players_188 = flatten_5(A2(map, drawPlayer_183, context_178.players));
+        var blocks_189 = A2(map, drawBlock_184, context_178.blocks);
+        var board_190 = _L.Cons(A2(filled, clearGrey_4, circle(context_178.radius)),_L.Nil);
+        var gameOver_191 = (_N.eq(length(context_178.blocks),0)?_L.Cons(A2(filled, clearGrey_4, square((2*context_178.radius))),_L.Cons(A2(move, {ctor:"Tuple2", _0:s_179(200), _1:s_179(400)}, toForm(A2(txt_32, Text.height((5*settings_0.scoreSize)), _str('GAME OVER')))),_L.Nil)):_L.Nil);
+        return A3(collage, (context_178.diameter+(2*settings_0.margin)), (context_178.diameter+(2*settings_0.margin)), _L.append(board_190,_L.append(players_188,_L.append(scores_187,_L.append(blocks_189,gameOver_191)))));}();}();};
+  var settings_0 = {
+    _:{
+    },
+    ballSize:30.0,
+    ballSpeed:9,
+    blockColor:A3(rgb, 200, 200, 200),
+    blockSize:60,
+    fps:50,
+    initialBallPadDistance:30,
+    margin:40,
+    padHeight:50.0,
+    padSpeed:3.0e-2,
+    padWidth:(pi/8.0),
+    scoreColor:A3(rgb, 0, 200, 0),
+    scoreSize:1};
+  var primitives_1 = {
+    _:{
+    },
+    ball:function(s_40){
+    return function(color_41){
+      return A2(filled, color_41, circle(s_40(settings_0.ballSize)));};},
+    block:function(s_36){
+    return A2(filled, red, square(s_36(((2.0*settings_0.blockSize)/sqrt(2.0)))));},
+    pad:function(ph_37){
+    return function(pw_38){
+      return function(color_39){
+        return A2(filled, color_39, A2(rect, ph_37, pw_38));};};}};
+  var model_2 = {
+    _:{
+    },
+    d:2000.0,
+    l:(2000*pi),
+    r:1000.0};
+  var context_3 = {
+    _:{
+    },
+    blocks:_L.Cons({
+    _:{
+    },
+    x:-120,
+    y:0},_L.Cons({
+    _:{
+    },
+    x:0,
+    y:120},_L.Cons({
+    _:{
+    },
+    x:120,
+    y:0},_L.Cons({
+    _:{
+    },
+    x:0,
+    y:-120},_L.Cons({
+    _:{
+    },
+    x:0,
+    y:-300},_L.Cons({
+    _:{
+    },
+    x:0,
+    y:300},_L.Cons({
+    _:{
+    },
+    x:300,
+    y:0},_L.Cons({
+    _:{
+    },
+    x:-300,
+    y:0},_L.Cons({
+    _:{
+    },
+    x:210,
+    y:210},_L.Cons({
+    _:{
+    },
+    x:-210,
+    y:210},_L.Cons({
+    _:{
+    },
+    x:210,
+    y:-210},_L.Cons({
+    _:{
+    },
+    x:-210,
+    y:-210},_L.Nil)))))))))))),
+    diameter:0,
+    h:0,
+    players:_L.Cons({
+    _:{
+    },
+    angle:0,
+    balls:_L.Cons({
+    _:{
+    },
+    moving:false,
+    vx:1,
+    vy:0,
+    x:0,
+    y:0},_L.Nil),
+    color:A4(rgba, 200, 0, 0, 0.8),
+    name:_str('Kazet'),
+    score:0,
+    x:1000,
+    y:0},_L.Cons({
+    _:{
+    },
+    angle:180,
+    balls:_L.Cons({
+    _:{
+    },
+    moving:false,
+    vx:0,
+    vy:1,
+    x:100,
+    y:100},_L.Nil),
+    color:A4(rgba, 0, 200, 0, 0.8),
+    name:_str('Kwaps'),
+    score:0,
+    x:-1000,
+    y:0},_L.Nil)),
+    score:0,
+    w:0};
+  var clearGrey_4 = A3(rgb, 100, 100, 200);
+  var input_34 = function(){
+    var toSignal_204 = F4(function(delta_206, keyboard_wasd_207, keyboard_arrows_208, window_dimensions_209){
+      return {ctor:"Tuple3", _0:delta_206, _1:_L.Cons(keyboard_wasd_207,_L.Cons(keyboard_arrows_208,_L.Nil)), _2:window_dimensions_209};});
+    var delta_203 = A2(lift, function(t_205){
+      return (t_205/20);}, fps(settings_0.fps));
+    return A2(sampleOn, delta_203, A5(lift4, toSignal_204, delta_203, Keyboard.wasd, Keyboard.arrows, Window.dimensions));}();
+  var main_35 = A2(lift, render_33, A3(foldp, step_31, resetAllBalls_8(context_3), input_34));
+  elm.Native = elm.Native||{};
+  var _ = elm.Native.Main||{};
+  _.$op = {};
+  _.settings = settings_0;
+  _.primitives = primitives_1;
+  _.model = model_2;
+  _.context = context_3;
+  _.clearGrey = clearGrey_4;
+  _.flatten = flatten_5;
+  _.resetBall = resetBall_6;
+  _.resetPlayerBalls = resetPlayerBalls_7;
+  _.resetAllBalls = resetAllBalls_8;
+  _.startBall = startBall_9;
+  _.startBalls = startBalls_10;
+  _.nth = nth_11;
+  _.movePlayer = movePlayer_12;
+  _.movePlayers = movePlayers_13;
+  _.near = near_14;
+  _.nearAngle = nearAngle_15;
+  _.within = within_16;
+  _.outOfBoard = outOfBoard_17;
+  _.detectCollision = detectCollision_18;
+  _.detectPlayerCollisions = detectPlayerCollisions_19;
+  _.dist = dist_20;
+  _.distCity = distCity_21;
+  _.sgn = sgn_22;
+  _.ballBlockCollision = ballBlockCollision_23;
+  _.detectBallCollisions = detectBallCollisions_24;
+  _.detectPlayerBallCollisions = detectPlayerBallCollisions_25;
+  _.detectCollisions = detectCollisions_26;
+  _.moveBall = moveBall_27;
+  _.moveBalls = moveBalls_28;
+  _.updateDimensions = updateDimensions_29;
+  _.checkEnd = checkEnd_30;
+  _.step = step_31;
+  _.txt = txt_32;
+  _.render = render_33;
+  _.input = input_34;
+  _.main = main_35
+  return elm.Main = _;
+  };</script></head><body><script type="text/javascript">Elm.fullscreen(Elm.Main)</script><noscript><p>>2 players are not supported</p><p> </p><p> </p><p>GAME OVER</p></noscript></body></html>
