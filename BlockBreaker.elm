@@ -113,19 +113,19 @@ within ball player =
 
 outOfBoard ball = (near (sqrt (ball.x * ball.x  + ball.y * ball.y)) 1050.0 (settings.padHeight/2.0))
 
-detectCollision p (ball, score) =
+detectCollision p ball =
     let
         b_angle = 2 * (p.angle + pi) - atan2 (0- ball.vy) (0 - ball.vx)
         revertedBall b = {b | vy <- sin b_angle,
                               vx <- cos b_angle
                               }
-    in if | within ball p -> (revertedBall ball, score)
-          | outOfBoard ball -> (resetBall ball, score - 3)
-          | otherwise -> (ball, score)
+    in if | within ball p -> (revertedBall ball,0)
+          | outOfBoard ball -> (resetBall ball, 0- 3)
+          | otherwise -> (ball,0)
 
 detectPlayerCollisions player context =
-    let (newBalls, scores) = unzip (map (\ball -> detectCollision player ball))
-    in { player | balls <- map (\ball -> detectCollision player ball) player.balls, score <- sum scores }
+    let (newBalls, scores) = unzip (map (detectCollision player) player.balls)
+    in { player | balls <- newBalls, score <- player.score + sum scores }
 
 dist a b = sqrt $ (a.x - b.x)^2 + (a.y - b.y)^2
 
