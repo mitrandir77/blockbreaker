@@ -113,18 +113,19 @@ within ball player =
 
 outOfBoard ball = (near (sqrt (ball.x * ball.x  + ball.y * ball.y)) 1050.0 (settings.padHeight/2.0))
 
-detectCollision p ball =
+detectCollision p (ball, score) =
     let
         b_angle = 2 * (p.angle + pi) - atan2 (0- ball.vy) (0 - ball.vx)
         revertedBall b = {b | vy <- sin b_angle,
                               vx <- cos b_angle
                               }
-    in if | within ball p -> revertedBall ball
-          | outOfBoard ball -> resetBall ball
-          | otherwise -> ball
+    in if | within ball p -> (revertedBall ball, score)
+          | outOfBoard ball -> (resetBall ball, score - 3)
+          | otherwise -> (ball, score)
 
 detectPlayerCollisions player context =
-    { player | balls <- map (\ball -> detectCollision player ball) player.balls }
+    let (newBalls, scores) = unzip (map (\ball -> detectCollision player ball))
+    in { player | balls <- map (\ball -> detectCollision player ball) player.balls, score <- sum scores }
 
 dist a b = sqrt $ (a.x - b.x)^2 + (a.y - b.y)^2
 
@@ -134,7 +135,7 @@ sgn x = if | x == 0 -> 0
            | x < 0  -> 0-1
            | otherwise -> 1
 
-ballBlockCollision block (ball, blocks)=
+ballBlockCollision block (ball, blocks, score)=
     let
         collides = distCity ball block <= (settings.ballSize + settings.blockSize)
         block_angle = let s = (sgn (block.x - ball.x), sgn (ball.y - block.y)) in
@@ -149,15 +150,15 @@ ballBlockCollision block (ball, blocks)=
         ball_angle = pi +  (2 * (block_angle) - atan2 (0- ball.vy) (0 - ball.vx))
         newBall = { ball | vx <- cos ball_angle,
                            vy <- sin ball_angle }
-    in if collides then (newBall, blocks) else (ball, block::blocks)
+    in if collides then (newBall, blocks, score + 1) else (ball, block::blocks, score)
 
-detectBallCollisions ball (context, balls) =
-    let (newBall, newBlocks)  = foldl ballBlockCollision (ball, []) context.blocks
-    in ({ context | blocks <- newBlocks }, newBall::balls)
+detectBallCollisions ball (context, balls, score) =
+    let (newBall, newBlocks, ballScore)  = foldl ballBlockCollision (ball, [], 0) context.blocks
+    in ({ context | blocks <- newBlocks }, newBall::balls, score+ballScore)
 
 detectPlayerBallCollisions player (context, players) =
-    let (newContext, newBalls)  = foldl detectBallCollisions (context, []) player.balls
-    in (newContext, players ++ [{player | balls <- newBalls}])
+    let (newContext, newBalls, newScore)  = foldl detectBallCollisions (context, [], player.score) player.balls
+    in (newContext, players ++ [{player | balls <- newBalls, score <- newScore}])
 
 detectCollisions context =
     let ctxAfterPlayerCollisions = { context | players <- map (\p -> detectPlayerCollisions p context) context.players }
